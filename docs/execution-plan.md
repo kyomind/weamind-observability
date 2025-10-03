@@ -14,7 +14,7 @@
 
 - ✅ **Grafana Dashboard（2 個）**
   - System Overview（CPU/Memory/Disk 監控）
-  - Application Performance（API metrics + Top 5 查詢縣市）
+  - Application Performance（API metrics）
 
 - ✅ **Alertmanager 告警規則（3 條）**
   - CPU > 80% 持續 1 分鐘
@@ -29,7 +29,7 @@
 - 7 個核心指標正常收集
 - 2 個 Dashboard 正確顯示
 - 3 條告警規則可正確觸發
-- 完整的技術文件與部署指南
+
 
 ## 第一階段：專案初始化與環境準備
 
@@ -133,14 +133,12 @@ weamind-observability/
 **工作項目**：
 - 實作天氣查詢次數計數器（按縣市分類）
 - 實作 LINE Bot 訊息處理指標
-- 實作快取命中率指標（Redis）
-- 實作資料庫查詢時間指標（PostgreSQL）
+
 
 **交付物**：
 - 天氣查詢指標：`weather_queries_total{city="台北市"}`
 - LINE Bot 指標：`line_messages_total{type="text|quick_reply"}`
-- 快取指標：`cache_hit_rate`
-- 資料庫指標：`db_query_duration_seconds`
+
 
 **驗收標準**：
 - 執行天氣查詢後，指標正確累加
@@ -271,11 +269,9 @@ grafana/
 **交付物**：
 - `grafana/provisioning/dashboards/application-performance.json`
 - 包含核心業務指標面板
-- Top 5 查詢縣市排行榜
 
 **驗收標準**：
 - Dashboard 顯示即時應用效能指標
-- Top 5 查詢縣市排行榜正確顯示
 - 錯誤率計算準確
 
 ## 第 12 天 - Alertmanager 基礎配置
@@ -390,12 +386,7 @@ groups:
 - 最終專案檢查與總結
 
 **交付物**：
-- `docs/dashboard-guide.md`
-- `docs/metrics-reference.md`
-- `docs/deployment-guide.md`
-- `docs/troubleshooting.md`
 - 更新後的 README.md
-- 最終測試報告
 - 核心功能驗證清單
 - 專案最終總結報告
 
@@ -404,7 +395,6 @@ groups:
 - 2 個 Grafana Dashboard 可正常顯示
 - 3 條告警規則可正確觸發
 - Docker Compose 一鍵部署成功
-- 文件內容完整清晰，可作為新手入門指南
 - 所有核心驗收標準達成
 
 ## 風險管控與應變計畫
