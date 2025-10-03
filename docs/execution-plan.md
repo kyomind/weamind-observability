@@ -7,6 +7,15 @@
 
 ## 驗收標準總覽
 
+### 計畫優化重點（工時 -20%，價值 95%）
+- 移除重工：取消第 3 天的 Grafana 手動資料源設定，改為第 2 天即完成 Grafana provisioning（datasource + dashboards provider），後續僅驗證。
+- 指標實作精準化：第 4 天在應用端自訂 http_request_duration_seconds 的直方圖 buckets（需覆蓋 ≥3s，如 0.1/0.3/0.5/1/2/3/5/8）。
+- 業務指標聚焦：保留 weather_queries_total；LINE Bot 指標調整為選配（Phase 2）。
+- 儀表板聚焦：System Overview 先放 CPU/Memory/Filesystem 使用率三大核心；Application Performance 聚焦 QPS、p95 latency、error rate、weather queries；其餘面板延後。
+- 告警節點合併：第 13 天完成 3 條規則並進行人工觸發驗證；第 14 天縮為半天回歸微調，釋出 buffer。
+- 優化改基線：第 15 天改為設定 Prometheus/Grafana 基線（retention、scrape 間隔、刷新頻率）與後續優化 TODO。
+- 文件收斂：第 16 天產出 README 快速啟動 + 驗收清單 + 簡版故障排除，非必要長報告延後。
+
 ### 核心交付物
 - ✅ **Prometheus Metrics（7 個核心指標）**
   - 系統層（3 個）：CPU 使用率、可用記憶體、Disk I/O
@@ -67,6 +76,7 @@ weamind-observability/
 - 配置 Alertmanager 容器（基礎設定）
 - 配置 Node Exporter 容器（系統指標收集）
 - 建立基礎 volumes 配置
+- 完成 Grafana provisioning（自動化資料源與 dashboards provider）
 
 **交付物**：
 ```
@@ -74,7 +84,11 @@ weamind-observability/
 ├── prometheus/
 │   └── prometheus.yml          # Prometheus 基礎配置
 ├── grafana/
-│   └── provisioning/           # Grafana 自動配置目錄
+│   └── provisioning/           # Grafana 自動配置目錄（本日一次到位）
+│       ├── datasources/
+│       │   └── prometheus.yml  # 自動配置 Prometheus 資料源
+│       └── dashboards/
+│           └── dashboard.yml   # dashboards provider（自動載入 JSON）
 └── alertmanager/
   └── alertmanager.yml        # Alertmanager 基礎配置
 ```
@@ -83,24 +97,26 @@ weamind-observability/
 - `docker compose up -d` 可成功啟動 4 個容器
 - 所有服務健康檢查通過
 - 可透過瀏覽器存取 Prometheus (9090)、Grafana (3000)、Alertmanager (9093)
+- 重新啟動 Grafana 後，Prometheus 資料源自動就緒（無須手動設定）
 
 ## 第 3 天 - 基礎連線與測試
 **目標**：確保所有元件間的基礎連線正常
 
 **工作項目**：
 - 測試 Prometheus 能成功抓取 Node Exporter 指標
-- 在 Grafana 中手動配置 Prometheus 資料源
+- 驗證第 2 天的 Grafana provisioning 是否自動載入資料源成功
+- 在 Grafana 中以現成資料源執行基本查詢（CPU、記憶體）
 - 測試 Alertmanager 基礎功能
 - 建立簡單的測試指標查詢
 
 **交付物**：
 - Prometheus targets 顯示 UP 狀態
-- Grafana 可成功連接 Prometheus
+- Grafana 可成功連接 Prometheus（由 provisioning 自動配置）
 - 基礎系統指標可在 Prometheus 中查詢到
 
 **驗收標準**：
 - Prometheus UI 中 Node Exporter target 狀態為 UP
-- Grafana 中可查詢到基本系統指標（如 CPU、Memory）
+- Grafana 中可查詢到基本系統指標（如 CPU、Memory），且無需手動設定資料源
 - Alertmanager 介面正常顯示
 
 ## 第二階段：WeaMind 應用整合
@@ -111,7 +127,7 @@ weamind-observability/
 **工作項目**：
 - 在 WeaMind FastAPI 應用中安裝 prometheus_client
 - 實作基礎 HTTP 請求計數器
-- 實作 API 回應時間直方圖
+- 實作 API 回應時間直方圖（自訂 buckets，覆蓋 >=3s，例如：0.1, 0.3, 0.5, 1, 2, 3, 5, 8）
 - 實作錯誤請求計數器
 - 測試 /metrics 端點輸出
 
@@ -132,17 +148,17 @@ weamind-observability/
 
 **工作項目**：
 - 實作天氣查詢次數計數器（按縣市分類）
-- 實作 LINE Bot 訊息處理指標
+- （選配/Phase 2）LINE Bot 訊息處理指標
 
 
 **交付物**：
 - 天氣查詢指標：`weather_queries_total{city="台北市"}`
-- LINE Bot 指標：`line_messages_total{type="text|quick_reply"}`
+- （選配）LINE Bot 指標：`line_messages_total`
 
 
 **驗收標準**：
 - 執行天氣查詢後，指標正確累加
-- 指標包含有意義的 labels 便於後續分析
+- 指標包含有意義的 labels 便於後續分析；LINE Bot 指標不納入核心驗收
 
 ## 第 6 天 - Prometheus 抓取配置
 **目標**：配置 Prometheus 抓取 WeaMind 應用指標
@@ -183,9 +199,8 @@ scrape_configs:
 - 修復發現的問題
 
 **交付物**：
-- 系統層指標驗證報告
-- 應用層指標驗證報告
-- 指標修正清單
+- 指標驗收清單（勾選紀錄）：涵蓋 7 個核心指標的可查詢性與資料合理性
+- 指標修正清單（必要時）
 
 **驗收標準**：
 - 所有 7 個指標在 Prometheus 中可正常查詢
@@ -202,9 +217,9 @@ scrape_configs:
 - 建立指標收集的最佳實踐文件
 
 **交付物**：
-- 效能影響評估報告
-- 優化後的指標實作
-- 最佳實踐文件
+- 效能觀察紀錄（簡要）：包含回應時間、錯誤率、抓取負載等觀察
+- 建議調整清單（如 scrape 間隔、labels 精簡、直方圖 buckets 微調）
+- 必要的小幅調整提交（若有）
 
 **驗收標準**：
 - WeaMind 應用回應時間增加 < 5%
@@ -213,43 +228,41 @@ scrape_configs:
 
 ## 第三階段：Grafana 儀表板開發
 
-## 第 9 天 - Grafana 資料源自動配置
-**目標**：實作 Grafana 的自動化配置
+## 第 9 天 - Grafana 自動化驗證與優化
+**目標**：驗證並完善 Grafana 的自動化配置（第 2 天已完成基礎 provisioning）
 
 **工作項目**：
-- 建立 Grafana provisioning 配置
-- 自動配置 Prometheus 資料源
-- 設定 Grafana 基礎參數（admin 密碼、plugin 等）
-- 測試自動配置功能
+- 驗證 dashboards provider 自動載入 JSON 正常
+- 新增/調整必要的 dashboard 變數與資料源引用
+- 設定 Grafana 基礎參數（admin 密碼、必要 plugin）
 
 **交付物**：
 ```
 grafana/
 └── provisioning/
-    ├── datasources/
-    │   └── prometheus.yml      # 自動配置 Prometheus 資料源
-    └── dashboards/
-        └── dashboard.yml       # dashboard provider 配置
+  ├── datasources/
+  │   └── prometheus.yml      # 已於第 2 天建立
+  └── dashboards/
+    └── dashboard.yml       # 自動載入 provider（本日驗證/微調）
 ```
 
 **驗收標準**：
-- 重啟 Grafana 容器後自動載入 Prometheus 資料源
+- 重啟 Grafana 容器後自動載入資料源與 dashboard
 - 無需手動配置即可使用資料源查詢指標
 
 ## 第 10 天 - System Overview Dashboard 開發
 **目標**：開發系統層監控儀表板
 
 **工作項目**：
-- 設計 System Overview Dashboard 布局
-- 建立 CPU 使用率面板（時間序列圖）
-- 建立記憶體使用面板（gauge + 時間序列）
-- 建立磁碟 I/O 面板
-- 建立系統負載面板
+- 採用社群 Node Exporter 模板為基底，做最小化調整
+- 核心面板優先：CPU 使用率、可用記憶體、檔案系統使用率
+- 其他面板（磁碟 I/O、系統負載）可列為後續增補
 
 **交付物**：
 - `grafana/provisioning/dashboards/system-overview.json`
-- 包含 4-6 個核心系統指標面板
-- 適當的閾值警告設定
+- 至少 3 個核心系統指標面板（CPU/Memory/Filesystem）
+- 適當的閾值警告設定（可先簡化）
+ - 註：核心交付物含 Disk I/O 指標；初版先以上述 3 面板完成驗收，Disk I/O 面板列為後續增補（避免初期過度客製）。
 
 **驗收標準**：
 - Dashboard 自動載入到 Grafana
@@ -260,15 +273,15 @@ grafana/
 **目標**：開發應用層監控儀表板
 
 **工作項目**：
-- 設計 Application Performance Dashboard 布局
+- 設計 Application Performance Dashboard 布局（精簡版）
 - 建立 HTTP 請求量面板（時間序列圖）
-- 建立 API 回應時間面板（直方圖）
-- 建立錯誤率面板（gauge）
-- 建立天氣查詢統計面板
+- 建立 API p95 回應時間面板（直方圖/折線）
+- 建立錯誤率面板（gauge 或單值）
+- 建立天氣查詢統計面板（總量或按城市）
 
 **交付物**：
 - `grafana/provisioning/dashboards/application-performance.json`
-- 包含核心業務指標面板
+- 包含 3–4 個核心業務指標面板（QPS、p95、error rate、weather queries）
 
 **驗收標準**：
 - Dashboard 顯示即時應用效能指標
@@ -304,6 +317,7 @@ alertmanager/
 - 實作記憶體使用率告警（> 70%）
 - 實作 API 回應時間告警（> 3 秒）
 - 配置告警規則檔案
+- 進行人工觸發驗證（製造高 CPU/記憶體、模擬慢 API）並記錄觀察
 
 **交付物**：
 ```yaml
@@ -325,16 +339,15 @@ groups:
 **驗收標準**：
 - 3 條告警規則語法正確
 - 可在 Prometheus UI 中看到告警規則
-- 告警條件符合業務需求
+- 告警條件符合業務需求，且已完成一次人工觸發與恢復驗證
 
 ## 第 14 天 - 告警測試與調整
 **目標**：測試告警觸發機制並調整參數
 
 **工作項目**：
-- 建立告警測試腳本
-- 模擬高 CPU、高記憶體、慢 API 回應情境
-- 驗證告警觸發與恢復機制
-- 調整告警閥值與持續時間
+- 建立簡易告警測試腳本（回歸用）
+- 驗證告警觸發與恢復機制（半天）
+- 根據第 13 天觀察微調告警閥值與持續時間（保留半天 buffer）
 
 **交付物**：
 - 告警測試腳本
@@ -352,23 +365,20 @@ groups:
 **目標**：優化整個監控系統的效能與資源使用
 
 **工作項目**：
-- 分析各元件的資源使用情況
-- 優化 Prometheus 的儲存與查詢效能
-- 調整 scrape 間隔與 retention 設定
-- 優化 Grafana Dashboard 查詢
-- 執行完整的系統測試流程
+- 設定基線：Prometheus retention、scrape_interval；Grafana 自動刷新頻率
+- 簡要檢視資源使用（node exporter 指標）並記錄基線值
+- 彙整未來優化 TODO（熱查詢、規則/錄製規則、資料分層等）
+- 執行基本端到端檢核（targets、dashboards、alerts）
 
 **交付物**：
-- 效能優化報告
-- 調整後的配置檔案
-- 系統測試報告
-- 端到端測試腳本
+- 基線設定清單與調整後配置
+- 未來優化 TODO（簡表）
+- 基本端到端檢核紀錄
 
 **驗收標準**：
-- 監控系統資源使用 < 系統總資源的 20%
-- Prometheus 查詢回應時間 < 2 秒
-- Grafana Dashboard 載入時間 < 3 秒
-- 監控系統可穩定運行 24 小時
+- 監控系統穩定運行，targets 均為 UP
+- 主要查詢/面板回應時間穩定（記錄基線即可，非硬性門檻）
+- 後續優化項目明確、可追蹤
 
 ## 第五階段：系統優化與文件化
 
@@ -376,19 +386,17 @@ groups:
 **目標**：完成技術文件撰寫與專案最終整合
 
 **工作項目**：
-- 撰寫 Dashboard 使用指南
-- 建立指標解釋文件
-- 撰寫部署與維護指南
-- 建立故障排除指南
+- 撰寫 Dashboard 使用指南（精簡版）
+- 建立指標解釋文件（核心 7 指標為主）
+- 撰寫部署與維護指南（以 Quick Start + 常見故障排除為主）
 - 整理專案 README.md 與 Quick Start 指南
-- 總結所有測試結果與問題
 - 驗證核心驗收標準達成情況
 - 最終專案檢查與總結
 
 **交付物**：
-- 更新後的 README.md
-- 核心功能驗證清單
-- 專案最終總結報告
+- 更新後的 README.md（含 Quick Start）
+- 核心功能驗證清單 + 簡版故障排除
+- 專案最終總結（簡要）
 
 **驗收標準**：
 - 7 個核心指標正常收集
