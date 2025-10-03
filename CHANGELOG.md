@@ -1,7 +1,5 @@
 # WeaMind Observability 變更記錄
 
-本專案遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/) 格式規範。
-
 ## [0.1.0] - 2025-10-03
 
 ### 新增
@@ -14,3 +12,9 @@
 ### 改進
 - **🎯 專案定位**: 面向 DevOps 工程師的完整可觀測性實踐專案
 - **🛠️ 開發流程**: 建立標準化的版本發布和專案管理流程
+
+---
+
+格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，並且本專案遵循[語意化版本](https://semver.org/lang/zh-TW/)。
+
+需要詳細的技術變更記錄，請參考 [GitHub Releases](https://github.com/kyomind/weamind-observability/releases)。
