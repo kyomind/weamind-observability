@@ -1,11 +1,11 @@
-# WeaMind CHANGELOG 維護指南
+# WeaMind Observability CHANGELOG 維護指南
 
 ## 🤖 AI 助理重要指示
 
 **當用戶要求更新 CHANGELOG 或版本時，AI 助理必須：**
 
-1. **優先使用 Makefile 指令**，避免手動操作
-2. **嚴格遵循標準發布流程**，確保不遺漏任何步驟
+1. **遵循標準發布流程**，確保不遺漏任何步驟
+2. **使用 Git 指令進行版本管理**，這是一個簡單的 Docker 監控專案
 
 ---
 
@@ -13,49 +13,62 @@
 
 ### 步驟 1：檢查狀態
 ```bash
-make changelog-status
+git log --oneline $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --oneline
 ```
-- 查看當前版本和分支
-- 統計待發布的 commits 數量
-- 顯示自上次版本以來的變更
+- 查看自上次版本以來的變更
+- 如果沒有版本標籤，顯示所有 commits
 
-### 步驟 2：準備資料
 ```bash
-make changelog-prepare VERSION=0.2.0
+git status
 ```
-- 自動收集 commits 資料
-- 提供完整的 Copilot Chat 提示詞
-- 輸出格式化的變更清單
+- 確認工作目錄乾淨
+- 檢查當前分支
 
-### 步驟 3：生成內容
-使用 Copilot Chat（提示詞由步驟 2 自動提供）：
+### 步驟 2：收集變更資料
+```bash
+# 查看詳細的 commit 資訊
+git log --oneline --no-merges $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --oneline --no-merges
+
+# 查看變更的檔案統計
+git diff --stat $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git diff --stat HEAD~10..HEAD
+```
+
+### 步驟 3：生成 CHANGELOG 內容
+使用 Copilot Chat：
 <CHANGELOG content>
-根據以下 git commits 為 WeaMind 產生 CHANGELOG 內容：
-[系統自動提供的 commits]
+根據以下 git commits 為 WeaMind Observability 產生 CHANGELOG 內容：
+[手動貼上 commits]
 
 要求：
-- 繁體中文、Keep a Changelog 格式、面向一般用戶、突出產品價值
+- 繁體中文、Keep a Changelog 格式、面向 DevOps 工程師、突出監控價值
 - **版本類型區分**：
   - Major/Minor 版本 (x.Y.z / X.y.z)：內容豐富，詳細描述新功能和改進
   - Patch 版本 (x.y.Z)：內容簡潔，專注關鍵修正和小幅改進
 - **忽略非功能性變更**：
   - C-Spell 字典更新或排除規則
   - 文件格式調整、錯字修正
-  - 依賴套件小版本更新
+  - GitHub Actions 小調整
   - 程式碼註解或變數重命名
   這些變更不應出現在 CHANGELOG 中
 </CHANGELOG content>
 
-### 步驟 4：發布版本
+### 步驟 4：手動發布版本
 ```bash
-make changelog-release VERSION=0.2.0
+# 1. 創建或更新 CHANGELOG.md
+# 2. 提交變更
+git add CHANGELOG.md
+git commit -m "Update CHANGELOG for v0.1.0"
+
+# 3. 建立版本標籤
+git tag v0.1.0
+
+# 4. 推送到遠端
+git push origin main --tags
 ```
-- 自動更新 `pyproject.toml` 版本號
-- 執行 `uv lock` 更新 lock 檔案
-- 提交所有變更（CHANGELOG.md + pyproject.toml + uv.lock）
-- 建立 git tag
-- 推送到遠端倉庫
-- 觸發 GitHub Actions 建立 Release
+- 提交 CHANGELOG.md 變更
+- 建立 git tag (格式: v0.1.0)
+- 推送到遠端倉庫，觸發 GitHub Actions
+- GitHub Actions 會自動建立 Release
 
 ---
 
@@ -72,84 +85,97 @@ make changelog-release VERSION=0.2.0
 3. **改進 (Changed)** - 既有功能改進、效能優化
 
 ### 撰寫原則
-- **面向用戶**：使用一般用戶能理解的語言，避免過多技術術語
-- **突出價值**：說明功能對用戶的實際好處，強調使用者體驗
+- **面向 DevOps 工程師**：使用 DevOps 和監控領域的專業術語，但保持清晰易懂
+- **突出監控價值**：說明功能對系統監控、可觀測性的實際好處
 - **簡潔明瞭**：每項變更一行描述，重點功能用 **粗體**
 - **版本類型區分**：
   - **Major/Minor 版本 (x.Y.z / X.y.z)**：內容豐富，詳細描述新功能和改進，可包含多個類別
   - **Patch 版本 (x.y.Z)**：內容簡潔，專注關鍵修正和小幅改進，通常只有 1-2 個關鍵項目
 - **嚴格篩選 commits**：
-  - ✅ 包含：新功能、錯誤修復、用戶體驗改進、安全性更新
-  - ❌ 排除：C-Spell 規則、文件微調、依賴更新、CI 調整、重構或格式化
+  - ✅ 包含：新監控功能、錯誤修復、儀表板改進、警報規則更新、Docker 配置優化
+  - ❌ 排除：C-Spell 規則、文件微調、GitHub Actions 調整、重構或格式化
 
 ### 內容範例
 ```markdown
-## [0.2.0] - 2025-08-25 (Minor 版本範例)
+## [0.2.0] - 2025-10-03 (Minor 版本範例)
 
 ### 新增
-- **智慧推薦功能**: 根據用戶查詢習慣，主動推薦相關天氣資訊
-- 支援語音查詢，讓天氣查詢更便利
+- **應用層監控**: 新增自定義 metrics 收集，支援業務指標監控
+- **AlertManager 整合**: 建立完整的告警通知機制，支援 Slack 和 Email 通知
 
 ### 修正
-- 修復地點搜尋偶爾無回應的問題，提升查詢穩定性
-- 改善 LIFF 頁面在不同裝置上的顯示效果
+- 修復 Prometheus 配置錯誤導致的 scrape 失敗問題
+- 改善 Grafana 儀表板在小螢幕裝置上的顯示效果
 
 ### 改進
-- 優化查詢速度，回應時間縮短 30%
-- 更新天氣圖示設計，視覺效果更直觀
+- 優化 Docker Compose 配置，縮短服務啟動時間 30%
+- 更新 Node Exporter 設定，增加系統監控覆蓋範圍
 
-## [0.2.1] - 2025-08-26 (Patch 版本範例)
+## [0.2.1] - 2025-10-04 (Patch 版本範例)
 
-### 改進
-- **🎯 Rich Menu 操作體驗**: 優化選單按鈕標籤文字，讓功能說明更加清楚易懂
+### 修正
+- **🔧 Prometheus 配置**: 修正 scrape_interval 設定，提升 metrics 收集穩定性
 
-## [0.5.2] - 2025-09-03 (Patch 版本範例)
+## [0.1.0] - 2025-10-01 (首次發布範例)
 
 ### 新增
-- **🔒 資安防護機制**: 新增 detect-secrets 工具，自動檢測並防止敏感資訊洩露，提升系統安全性
+- **� 完整監控堆疊**: Prometheus + Grafana + AlertManager + Node Exporter 一鍵部署
+- **📊 核心儀表板**: 系統概覽和應用效能監控儀表板
+- **🔔 智慧告警**: 3 個核心告警規則，涵蓋系統和應用層監控
 ```
 
 ---
 
-## 🛠️ 進階用法與工具
+## 🛠️ 實用 Git 指令
 
-### 直接使用腳本
+### 版本管理指令
 ```bash
-./scripts/changelog.sh status           # 查看狀態
-./scripts/changelog.sh prepare [ver]    # 準備資料
-./scripts/changelog.sh release <ver>    # 發布版本
-./scripts/changelog.sh help             # 顯示幫助
-```
+# 查看版本歷史
+git tag --sort=-version:refname      # 依版本號排序顯示標籤
+git log --tags --simplify-by-decoration --pretty="format:%ai %d" # 版本時間線
 
-### 手動 Git 操作（僅供參考）
-```bash
 # 收集變更資訊
-git log --oneline v0.1.0..HEAD
-git log --oneline --merges v0.1.0..HEAD  # PR 合併記錄
-git diff --stat v0.1.0..HEAD             # 檔案變更統計
+git log --oneline --no-merges LAST_TAG..HEAD    # 自上次版本的 commits
+git log --oneline --merges LAST_TAG..HEAD       # PR 合併記錄
+git diff --stat LAST_TAG..HEAD                  # 檔案變更統計
+git diff --name-only LAST_TAG..HEAD             # 變更檔案清單
 
-# 手動版本管理（不建議）
-# 更新 pyproject.toml，提交，建立標籤，推送
+# 版本發布
+git add CHANGELOG.md                             # 加入變更記錄
+git commit -m "Update CHANGELOG for v0.1.0"     # 提交變更
+git tag v0.1.0                                  # 建立版本標籤
+git push origin main --tags                     # 推送所有變更和標籤
+
+# 檢查發布狀態
+git log --oneline -1                             # 查看最新 commit
+git describe --tags                              # 查看當前版本描述
 ```
+
+### GitHub Release 自動化
+專案使用 GitHub Actions 自動化 Release：
+- 推送 tag 時自動觸發 `.github/workflows/auto-release.yml`
+- 自動生成 Release Notes
+- 包含完整的 git 歷史記錄
 
 ### Copilot Chat 範本
 
-#### 生成特定功能版本
+#### 生成監控功能版本
 ```
-為 WeaMind v0.2.0 產生 CHANGELOG，重點關注：
-- LINE Bot Rich Menu 功能
-- 用戶查詢記錄系統
-- 天氣 API 整合
-- 安全性改進
+為 WeaMind Observability v0.2.0 產生 CHANGELOG，重點關注：
+- Prometheus 監控配置
+- Grafana 儀表板功能
+- AlertManager 告警機制
+- Docker Compose 部署改進
+- Node Exporter 系統監控
 
 版本類型：Minor 版本（內容豐富）
-要求：簡潔明瞭，面向一般用戶，突出產品價值。
-忽略：C-Spell、文件更新、依賴調整等非功能性變更。
+要求：簡潔明瞭，面向 DevOps 工程師，突出監控價值。
+忽略：C-Spell、文件更新、GitHub Actions 調整等非功能性變更。
 ```
 
 #### 生成 Patch 版本
 ```
-為 WeaMind v0.2.1 產生 CHANGELOG（Patch 版本）：
+為 WeaMind Observability v0.2.1 產生 CHANGELOG（Patch 版本）：
 [貼上 commits]
 
 要求：
@@ -161,43 +187,46 @@ git diff --stat v0.1.0..HEAD             # 檔案變更統計
 
 #### 優化既有內容
 ```
-優化這段 CHANGELOG 內容，讓它更吸引使用者：
+優化這段 CHANGELOG 內容，讓它更吸引 DevOps 工程師：
 [貼上現有內容]
 
-優化方向：突出產品價值、生動描述、加入使用情境、保持技術準確性
+優化方向：突出監控價值、強調可觀測性改進、加入技術細節、保持專業準確性
 ```
 
 ---
 
 ## ✅ 發布檢查清單
 
-### 自動化流程檢查
-- [ ] 執行 `make changelog-status` 確認有新變更
-- [ ] 執行 `make changelog-prepare` 獲得 commits 資料
+### 手動發布流程檢查
+- [ ] 確認工作目錄乾淨 (`git status`)
+- [ ] 檢查自上次版本的變更 (`git log --oneline LAST_TAG..HEAD`)
 - [ ] 使用 Copilot Chat 生成內容並完善 CHANGELOG.md
-- [ ] 執行 `make changelog-release VERSION=x.y.z` 完成發布
+- [ ] 提交 CHANGELOG.md (`git add CHANGELOG.md && git commit -m "Update CHANGELOG for vX.Y.Z"`)
+- [ ] 建立版本標籤 (`git tag vX.Y.Z`)
+- [ ] 推送到遠端 (`git push origin main --tags`)
 - [ ] 確認 GitHub Actions 成功建立 Release
 
 ### 內容品質檢查
 - [ ] 使用繁體中文且語調一致
 - [ ] 重要功能用粗體突出
-- [ ] 強調用戶價值和體驗改進
-- [ ] 版本號格式正確 (x.y.z)
+- [ ] 強調監控和可觀測性價值
+- [ ] 版本號格式正確 (vX.Y.Z)
 
 ---
 
-## 🎯 產品行銷要點
+## 🎯 專案定位要點
 
-記住 WeaMind 是一個**產品**，CHANGELOG 也是行銷材料。
+記住 WeaMind Observability 是一個**開源監控解決方案**，CHANGELOG 面向 DevOps 工程師和系統管理員。
 
 ### 常用 Emoji
 - 🚀 新功能發布
-- 🌤️ 天氣相關功能
-- 🎯 精準功能
-- 👤 用戶相關
-- 🔒 安全性
-- 🔧 工具改進
-- 🎨 UI/UX 改進
+- 📊 儀表板相關
+- 🔔 告警相關
+- � Docker 相關
+- � 配置改進
+- �🔒 安全性
+- � 效能改進
+- � 監控精準度
 
 ---
 
@@ -205,8 +234,7 @@ git diff --stat v0.1.0..HEAD             # 檔案變更統計
 
 ### 基本指令
 ```bash
-make changelog-status                    # 查看狀態
-make changelog-prepare [VERSION=x.y.z]   # 準備資料
-make changelog-release VERSION=x.y.z     # 發布版本
-./scripts/changelog.sh help             # 顯示幫助
+git log --oneline $(git describe --tags --abbrev=0)..HEAD    # 查看新變更
+git add CHANGELOG.md && git commit -m "Update CHANGELOG"     # 提交 CHANGELOG
+git tag vX.Y.Z && git push origin main --tags               # 發布版本
 ```
