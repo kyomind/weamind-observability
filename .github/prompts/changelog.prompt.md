@@ -4,40 +4,41 @@
 
 **當用戶要求更新 CHANGELOG 或版本時，AI 助理必須：**
 
-1. **遵循標準發布流程**，確保不遺漏任何步驟
-2. **使用 Git 指令進行版本管理**，這是一個簡單的 Docker 監控專案
+1. **優先使用 Makefile 指令**，避免手動操作
+2. **嚴格遵循標準發布流程**，確保不遺漏任何步驟
+3. **使用 Git 指令進行版本管理**，這是一個簡單的 Docker 監控專案
 
----
-
-## 📋 標準發布流程
+-### 常用 Emoji
+- 🚀 新功能發布
+- 📊 儀表板相關
+- 🔔 告警相關
+- 🐳 Docker 相關
+- � 配置改進
+- 🔒 安全性
+- ⚡ 效能改進
+- 🎯 監控精準度 標準發布流程
 
 ### 步驟 1：檢查狀態
 ```bash
-git log --oneline $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --oneline
+make changelog-status
 ```
-- 查看自上次版本以來的變更
-- 如果沒有版本標籤，顯示所有 commits
+- 查看當前版本和分支
+- 統計待發布的 commits 數量
+- 顯示自上次版本以來的變更
 
+### 步驟 2：準備資料
 ```bash
-git status
+make changelog-prepare VERSION=0.2.0
 ```
-- 確認工作目錄乾淨
-- 檢查當前分支
+- 自動收集 commits 資料
+- 提供完整的 Copilot Chat 提示詞
+- 輸出格式化的變更清單
 
-### 步驟 2：收集變更資料
-```bash
-# 查看詳細的 commit 資訊
-git log --oneline --no-merges $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --oneline --no-merges
-
-# 查看變更的檔案統計
-git diff --stat $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git diff --stat HEAD~10..HEAD
-```
-
-### 步驟 3：生成 CHANGELOG 內容
-使用 Copilot Chat：
+### 步驟 3：生成內容
+使用 Copilot Chat（提示詞由步驟 2 自動提供）：
 <CHANGELOG content>
 根據以下 git commits 為 WeaMind Observability 產生 CHANGELOG 內容：
-[手動貼上 commits]
+[系統自動提供的 commits]
 
 要求：
 - 繁體中文、Keep a Changelog 格式、面向 DevOps 工程師、突出監控價值
@@ -52,21 +53,12 @@ git diff --stat $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git diff 
   這些變更不應出現在 CHANGELOG 中
 </CHANGELOG content>
 
-### 步驟 4：手動發布版本
+### 步驟 4：發布版本
 ```bash
-# 1. 創建或更新 CHANGELOG.md
-# 2. 提交變更
-git add CHANGELOG.md
-git commit -m "Update CHANGELOG for v0.1.0"
-
-# 3. 建立版本標籤
-git tag v0.1.0
-
-# 4. 推送到遠端
-git push origin main --tags
+make changelog-release VERSION=0.2.0
 ```
 - 提交 CHANGELOG.md 變更
-- 建立 git tag (格式: v0.1.0)
+- 建立 git tag (格式: v0.2.0)
 - 推送到遠端倉庫，觸發 GitHub Actions
 - GitHub Actions 會自動建立 Release
 
@@ -119,43 +111,37 @@ git push origin main --tags
 ## [0.1.0] - 2025-10-01 (首次發布範例)
 
 ### 新增
-- **� 完整監控堆疊**: Prometheus + Grafana + AlertManager + Node Exporter 一鍵部署
+- **🐳 完整監控堆疊**: Prometheus + Grafana + AlertManager + Node Exporter 一鍵部署
 - **📊 核心儀表板**: 系統概覽和應用效能監控儀表板
 - **🔔 智慧告警**: 3 個核心告警規則，涵蓋系統和應用層監控
 ```
 
 ---
 
-## 🛠️ 實用 Git 指令
+## 🛠️ 進階用法與工具
 
-### 版本管理指令
+### 直接使用腳本
 ```bash
-# 查看版本歷史
-git tag --sort=-version:refname      # 依版本號排序顯示標籤
-git log --tags --simplify-by-decoration --pretty="format:%ai %d" # 版本時間線
+./scripts/changelog.sh status           # 查看狀態
+./scripts/changelog.sh prepare [ver]    # 準備資料
+./scripts/changelog.sh release <ver>    # 發布版本
+./scripts/changelog.sh help             # 顯示幫助
+```
 
+### 手動 Git 操作（僅供參考）
+```bash
 # 收集變更資訊
 git log --oneline --no-merges LAST_TAG..HEAD    # 自上次版本的 commits
 git log --oneline --merges LAST_TAG..HEAD       # PR 合併記錄
 git diff --stat LAST_TAG..HEAD                  # 檔案變更統計
 git diff --name-only LAST_TAG..HEAD             # 變更檔案清單
 
-# 版本發布
+# 手動版本管理（不建議）
 git add CHANGELOG.md                             # 加入變更記錄
 git commit -m "Update CHANGELOG for v0.1.0"     # 提交變更
 git tag v0.1.0                                  # 建立版本標籤
 git push origin main --tags                     # 推送所有變更和標籤
-
-# 檢查發布狀態
-git log --oneline -1                             # 查看最新 commit
-git describe --tags                              # 查看當前版本描述
 ```
-
-### GitHub Release 自動化
-專案使用 GitHub Actions 自動化 Release：
-- 推送 tag 時自動觸發 `.github/workflows/auto-release.yml`
-- 自動生成 Release Notes
-- 包含完整的 git 歷史記錄
 
 ### Copilot Chat 範本
 
@@ -197,20 +183,18 @@ git describe --tags                              # 查看當前版本描述
 
 ## ✅ 發布檢查清單
 
-### 手動發布流程檢查
-- [ ] 確認工作目錄乾淨 (`git status`)
-- [ ] 檢查自上次版本的變更 (`git log --oneline LAST_TAG..HEAD`)
+### 自動化流程檢查
+- [ ] 執行 `make changelog-status` 確認有新變更
+- [ ] 執行 `make changelog-prepare` 獲得 commits 資料
 - [ ] 使用 Copilot Chat 生成內容並完善 CHANGELOG.md
-- [ ] 提交 CHANGELOG.md (`git add CHANGELOG.md && git commit -m "Update CHANGELOG for vX.Y.Z"`)
-- [ ] 建立版本標籤 (`git tag vX.Y.Z`)
-- [ ] 推送到遠端 (`git push origin main --tags`)
+- [ ] 執行 `make changelog-release VERSION=x.y.z` 完成發布
 - [ ] 確認 GitHub Actions 成功建立 Release
 
 ### 內容品質檢查
 - [ ] 使用繁體中文且語調一致
 - [ ] 重要功能用粗體突出
-- [ ] 強調監控和可觀測性價值
-- [ ] 版本號格式正確 (vX.Y.Z)
+- [ ] 強調用戶價值和體驗改進
+- [ ] 版本號格式正確 (x.y.z)
 
 ---
 
@@ -222,11 +206,11 @@ git describe --tags                              # 查看當前版本描述
 - 🚀 新功能發布
 - 📊 儀表板相關
 - 🔔 告警相關
-- � Docker 相關
-- � 配置改進
-- �🔒 安全性
-- � 效能改進
-- � 監控精準度
+- 🐳 Docker 相關
+- 🔧 配置改進
+- 🔒 安全性
+- ⚡ 效能改進
+- 🎯 監控精準度
 
 ---
 
@@ -234,7 +218,8 @@ git describe --tags                              # 查看當前版本描述
 
 ### 基本指令
 ```bash
-git log --oneline $(git describe --tags --abbrev=0)..HEAD    # 查看新變更
-git add CHANGELOG.md && git commit -m "Update CHANGELOG"     # 提交 CHANGELOG
-git tag vX.Y.Z && git push origin main --tags               # 發布版本
+make changelog-status                    # 查看狀態
+make changelog-prepare [VERSION=x.y.z]   # 準備資料
+make changelog-release VERSION=x.y.z     # 發布版本
+./scripts/changelog.sh help             # 顯示幫助
 ```
