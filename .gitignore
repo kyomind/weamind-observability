@@ -1,0 +1,7 @@
+.env
+prometheus-data/
+grafana-data/
+alertmanager-data/
+.DS_Store
+*.swp
+prd/
