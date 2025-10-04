@@ -7,19 +7,10 @@
 
 ## 驗收標準總覽
 
-### 計畫優化重點（工時 -20%，價值 95%）
-- 移除重工：取消第 3 天的 Grafana 手動資料源設定，改為第 2 天即完成 Grafana provisioning（datasource + dashboards provider），後續僅驗證。
-- 指標實作精準化：第 4 天在應用端自訂 http_request_duration_seconds 的直方圖 buckets（需覆蓋 ≥3s，如 0.1/0.3/0.5/1/2/3/5/8）。
-- 業務指標聚焦：保留 weather_queries_total；LINE Bot 指標調整為選配（Phase 2）。
-- 儀表板聚焦：System Overview 先放 CPU/Memory/Filesystem 使用率三大核心；Application Performance 聚焦 QPS、p95 latency、error rate、weather queries；其餘面板延後。
-- 告警節點合併：第 13 天完成 3 條規則並進行人工觸發驗證；第 14 天縮為半天回歸微調，釋出 buffer。
-- 優化改基線：第 15 天改為設定 Prometheus/Grafana 基線（retention、scrape 間隔、刷新頻率）與後續優化 TODO。
-- 文件收斂：第 16 天產出 README 快速啟動 + 驗收清單 + 簡版故障排除，非必要長報告延後。
-
 ### 核心交付物
-- ✅ **Prometheus Metrics（7 個核心指標）**
+- ✅ **Prometheus Metrics（6 個核心指標）**
   - 系統層（3 個）：CPU 使用率、可用記憶體、Disk I/O
-  - 應用層（4 個）：HTTP 請求總數、API 回應時間、錯誤請求總數、天氣查詢次數
+  - 應用層（3 個）：HTTP 請求總數、API 回應時間、天氣查詢次數
 
 - ✅ **Grafana Dashboard（2 個）**
   - System Overview（CPU/Memory/Disk 監控）
@@ -35,10 +26,9 @@
 **驗收標準**：
 - 所有監控組件正常運行
 - Docker Compose 一鍵部署成功
-- 7 個核心指標正常收集
+- 6 個核心指標正常收集
 - 2 個 Dashboard 正確顯示
 - 3 條告警規則可正確觸發
-
 
 ## 第一階段：專案初始化與環境準備
 
@@ -128,15 +118,13 @@ weamind-observability/
 - 在 WeaMind FastAPI 應用中安裝 prometheus_client
 - 實作基礎 HTTP 請求計數器
 - 實作 API 回應時間直方圖（自訂 buckets，覆蓋 >=3s，例如：0.1, 0.3, 0.5, 1, 2, 3, 5, 8）
-- 實作錯誤請求計數器
 - 測試 /metrics 端點輸出
 
 **交付物**：
 - WeaMind 應用的 /metrics 端點正常運作
-- 4 個應用層指標正確輸出：
+- 3 個應用層指標正確輸出：
   - `http_requests_total`
   - `http_request_duration_seconds`
-  - `http_errors_total`
   - `weather_queries_total`
 
 **驗收標準**：
@@ -150,11 +138,9 @@ weamind-observability/
 - 實作天氣查詢次數計數器（按縣市分類）
 - （選配/Phase 2）LINE Bot 訊息處理指標
 
-
 **交付物**：
 - 天氣查詢指標：`weather_queries_total{city="台北市"}`
 - （選配）LINE Bot 指標：`line_messages_total`
-
 
 **驗收標準**：
 - 執行天氣查詢後，指標正確累加
@@ -186,24 +172,24 @@ scrape_configs:
 
 **驗收標準**：
 - Prometheus targets 頁面顯示 WeaMind 為 UP 狀態
-- 可在 Prometheus 中查詢到所有 7 個核心指標
+- 可在 Prometheus 中查詢到所有 6 個核心指標
 - 指標資料持續更新
 
 ## 第 7 天 - 指標驗證與調整
 **目標**：驗證所有指標收集正確並進行調整
 
 **工作項目**：
-- 測試所有 7 個核心指標的資料正確性
+- 測試所有 6 個核心指標的資料正確性
 - 調整指標的 labels 和命名規範
 - 驗證指標的時間序列資料
 - 修復發現的問題
 
 **交付物**：
-- 指標驗收清單（勾選紀錄）：涵蓋 7 個核心指標的可查詢性與資料合理性
+- 指標驗收清單（勾選紀錄）：涵蓋 6 個核心指標的可查詢性與資料合理性
 - 指標修正清單（必要時）
 
 **驗收標準**：
-- 所有 7 個指標在 Prometheus 中可正常查詢
+- 所有 6 個指標在 Prometheus 中可正常查詢
 - 指標資料符合預期邏輯（CPU 使用率 0-100%、請求數遞增等）
 - 指標命名符合 Prometheus 最佳實踐
 
@@ -276,7 +262,7 @@ grafana/
 - 設計 Application Performance Dashboard 布局（精簡版）
 - 建立 HTTP 請求量面板（時間序列圖）
 - 建立 API p95 回應時間面板（直方圖/折線）
-- 建立錯誤率面板（gauge 或單值）
+- 建立錯誤率面板（gauge 或單值，透過 PromQL 計算）
 - 建立天氣查詢統計面板（總量或按城市）
 
 **交付物**：
@@ -285,7 +271,7 @@ grafana/
 
 **驗收標準**：
 - Dashboard 顯示即時應用效能指標
-- 錯誤率計算準確
+- 錯誤率透過 PromQL 查詢準確計算
 
 ## 第 12 天 - Alertmanager 基礎配置
 **目標**：配置 Alertmanager 的基礎告警功能
@@ -387,7 +373,7 @@ groups:
 
 **工作項目**：
 - 撰寫 Dashboard 使用指南（精簡版）
-- 建立指標解釋文件（核心 7 指標為主）
+- 建立指標解釋文件（核心 6 指標為主）
 - 撰寫部署與維護指南（以 Quick Start + 常見故障排除為主）
 - 整理專案 README.md 與 Quick Start 指南
 - 驗證核心驗收標準達成情況
@@ -399,7 +385,7 @@ groups:
 - 專案最終總結（簡要）
 
 **驗收標準**：
-- 7 個核心指標正常收集
+- 6 個核心指標正常收集
 - 2 個 Grafana Dashboard 可正常顯示
 - 3 條告警規則可正確觸發
 - Docker Compose 一鍵部署成功
@@ -427,7 +413,7 @@ groups:
 ## 專案成功指標
 
 ### 最低驗收標準（必達）
-- ✅ 7 個核心指標正常收集
+- ✅ 6 個核心指標正常收集
 - ✅ 2 個 Grafana Dashboard 可正常顯示
 - ✅ 3 條告警規則可正確觸發
 - ✅ Docker Compose 一鍵部署成功
