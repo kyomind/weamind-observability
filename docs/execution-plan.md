@@ -353,18 +353,15 @@ groups:
 **工作項目**：
 - 設定基線：Prometheus retention、scrape_interval；Grafana 自動刷新頻率
 - 簡要檢視資源使用（node exporter 指標）並記錄基線值
-- 彙整未來優化 TODO（熱查詢、規則/錄製規則、資料分層等）
 - 執行基本端到端檢核（targets、dashboards、alerts）
 
 **交付物**：
 - 基線設定清單與調整後配置
-- 未來優化 TODO（簡表）
 - 基本端到端檢核紀錄
 
 **驗收標準**：
 - 監控系統穩定運行，targets 均為 UP
 - 主要查詢/面板回應時間穩定（記錄基線即可，非硬性門檻）
-- 後續優化項目明確、可追蹤
 
 ## 第五階段：系統優化與文件化
 
